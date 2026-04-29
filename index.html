@@ -16,15 +16,6 @@
           </div>
         </header>
 
-        <div class="edit-bar">
-          <button id="editToggleButton" class="edit-toggle" type="button" aria-pressed="false">수정</button>
-        </div>
-
-        <div id="editToolbar" class="toolbar" hidden>
-          <button id="addTableButton" class="primary-tool" type="button">＋ 테이블</button>
-          <button id="deleteTableButton" class="danger-tool" type="button">삭제</button>
-        </div>
-
         <div class="summary-bar">
           <span id="tableCount">0 테이블</span>
           <span id="guestCount">0명</span>
@@ -53,10 +44,14 @@
             <button class="extend-button" type="button">＋1시간</button>
             <button class="reset-button" type="button">초기화</button>
           </div>
+          <div class="edit-actions">
+            <button class="delete-button" type="button">삭제</button>
+            <button class="done-button" type="button">완료</button>
+          </div>
         </div>
       </article>
     </template>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>
