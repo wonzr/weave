@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>주점 자리 배치도</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="mainScreen" class="main-screen" aria-label="자리 배치도">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">WEAVE</p>
+            <h2>주점 자리 배치도</h2>
+          </div>
+        </header>
+
+        <div class="edit-bar">
+          <button id="editToggleButton" class="edit-toggle" type="button" aria-pressed="false">수정</button>
+        </div>
+
+        <div id="editToolbar" class="toolbar" hidden>
+          <button id="addTableButton" class="primary-tool" type="button">＋ 테이블</button>
+          <button id="deleteTableButton" class="danger-tool" type="button">삭제</button>
+        </div>
+
+        <div class="summary-bar">
+          <span id="tableCount">0 테이블</span>
+          <span id="guestCount">0명</span>
+        </div>
+        <div id="seatBoard" class="board seat-board" aria-label="자리 상태"></div>
+      </section>
+    </main>
+
+    <template id="tableTemplate">
+      <article class="table-seat">
+        <button class="table-face" type="button"></button>
+        <div class="table-editor">
+          <label>
+            <span>대표자</span>
+            <input class="leader-input" placeholder="이름" />
+          </label>
+          <label>
+            <span>인원</span>
+            <input class="guest-input" type="number" min="0" max="99" inputmode="numeric" placeholder="0" />
+          </label>
+          <div class="timer-row">
+            <strong class="timer-text">02:00:00</strong>
+            <button class="start-button" type="button">2시간 시작</button>
+          </div>
+          <div class="timer-actions">
+            <button class="extend-button" type="button">＋1시간</button>
+            <button class="reset-button" type="button">초기화</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
