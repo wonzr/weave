@@ -35,6 +35,7 @@ input {
 button {
   border: 0;
   cursor: pointer;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -138,7 +139,9 @@ input:focus {
 .danger-tool,
 .start-button,
 .extend-button,
-.reset-button {
+.reset-button,
+.delete-button,
+.done-button {
   min-height: 44px;
   border-radius: 8px;
   font-weight: 800;
@@ -146,7 +149,6 @@ input:focus {
 
 .login-form button,
 .primary-tool,
-.edit-toggle,
 .start-button {
   color: #050505;
   background: var(--accent);
@@ -176,21 +178,6 @@ input:focus {
   border: 1px solid var(--line);
   border-radius: 8px;
   font-size: 1.15rem;
-}
-
-.edit-bar {
-  margin-bottom: 12px;
-}
-
-.edit-toggle {
-  width: 100%;
-  min-height: 44px;
-  border-radius: 8px;
-  font-weight: 800;
-}
-
-.edit-toggle[aria-pressed="true"] {
-  background: var(--ok);
 }
 
 [hidden] {
@@ -245,11 +232,7 @@ input:focus {
 .seat-board {
   overflow: visible;
   margin-bottom: 184px;
-  touch-action: auto;
-}
-
-.seat-board.editing {
-  touch-action: none;
+  touch-action: manipulation;
 }
 
 .table-seat {
@@ -280,10 +263,10 @@ input:focus {
   white-space: pre-line;
 }
 
-.seat-board.editing .table-seat.selected .table-face,
-.seat-board.editing .table-seat.focused .table-face {
+.seat-board .table-seat.focused .table-face {
   border-color: var(--ok);
   box-shadow: 0 0 0 4px rgba(110, 231, 183, 0.26), 0 12px 24px rgba(0, 0, 0, 0.46);
+  touch-action: none;
 }
 
 .table-face:disabled {
@@ -293,8 +276,11 @@ input:focus {
 
 .table-editor {
   display: none;
+  position: absolute;
+  top: 102px;
+  left: 50%;
+  transform: translateX(-50%);
   width: min(290px, calc(100vw - 48px));
-  margin-top: 10px;
   padding: 12px;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -302,11 +288,22 @@ input:focus {
   box-shadow: var(--shadow);
 }
 
-.seat-board.editing .table-seat.focused {
+.table-seat.edge-left .table-editor {
+  left: 0;
+  transform: none;
+}
+
+.table-seat.edge-right .table-editor {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.seat-board .table-seat.focused {
   z-index: 5;
 }
 
-.seat-board.editing .table-seat.focused .table-editor {
+.seat-board .table-seat.focused .table-editor {
   display: grid;
   gap: 10px;
 }
@@ -339,6 +336,12 @@ input:focus {
   gap: 8px;
 }
 
+.edit-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .extend-button {
   color: #050505;
   background: var(--ok);
@@ -356,6 +359,16 @@ input:focus {
   color: var(--text);
   background: var(--panel-2);
   border: 1px solid var(--line);
+}
+
+.delete-button {
+  color: #050505;
+  background: var(--danger);
+}
+
+.done-button {
+  color: #050505;
+  background: var(--accent);
 }
 
 @media (max-width: 390px) {
@@ -380,6 +393,7 @@ input:focus {
   }
 
   .table-editor {
+    top: 92px;
     width: min(278px, calc(100vw - 34px));
   }
 }
