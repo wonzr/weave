@@ -1,3 +1,25 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import {
+  getDatabase,
+  onValue,
+  ref,
+  set,
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB8gr-_qwX8exMltiMi79W1EV5VeA4rDzA",
+  authDomain: "weave-21879.firebaseapp.com",
+  databaseURL: "https://weave-21879-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "weave-21879",
+  storageBucket: "weave-21879.firebasestorage.app",
+  messagingSenderId: "45486847233",
+  appId: "1:45486847233:web:1b4d6f541b81033bb69700",
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const database = getDatabase(firebaseApp);
+const seatMapRef = ref(database, "seatMap");
+
 const STORAGE_KEY = "weave-pub-seat-map-v3";
 const LEGACY_STORAGE_KEYS = ["weave-pub-seat-map-v2", "weave-pub-seat-map-v1"];
 const BASE_TIME = 2 * 60 * 60 * 1000;
@@ -5,10 +27,6 @@ const EXTEND_TIME = 60 * 60 * 1000;
 
 const els = {
   mainScreen: document.querySelector("#mainScreen"),
-  editToggleButton: document.querySelector("#editToggleButton"),
-  editToolbar: document.querySelector("#editToolbar"),
-  addTableButton: document.querySelector("#addTableButton"),
-  deleteTableButton: document.querySelector("#deleteTableButton"),
   seatBoard: document.querySelector("#seatBoard"),
   tableTemplate: document.querySelector("#tableTemplate"),
   tableCount: document.querySelector("#tableCount"),
@@ -16,10 +34,12 @@ const els = {
 };
 
 let state = loadState();
-let isEditing = false;
 let selectedTableId = state.tables[0]?.id ?? null;
 let focusedTableId = null;
 let dragState = null;
+let lastBoardTap = null;
+let lastTableTap = null;
+let lastCloudState = "";
 
 function createInitialTables() {
   return [
@@ -51,19 +71,23 @@ function loadState() {
   const shouldClearTimers = !currentState;
 
   if (saved?.tables?.length) {
-    return {
-      tables: saved.tables.map((table) => ({
-        id: table.id ?? createTable().id,
-        x: Number.isFinite(Number(table.x)) ? Number(table.x) : 50,
-        y: Number.isFinite(Number(table.y)) ? Number(table.y) : 50,
-        leader: table.leader ?? "",
-        guests: table.guests ?? "",
-        endAt: !shouldClearTimers && Number(table.endAt) > 0 ? Number(table.endAt) : null,
-      })),
-    };
+    return normalizeState(saved, shouldClearTimers);
   }
 
   return { tables: createInitialTables() };
+}
+
+function normalizeState(saved, shouldClearTimers = false) {
+  return {
+    tables: (saved?.tables ?? []).map((table) => ({
+      id: table.id ?? createTable().id,
+      x: Number.isFinite(Number(table.x)) ? Number(table.x) : 50,
+      y: Number.isFinite(Number(table.y)) ? Number(table.y) : 50,
+      leader: table.leader ?? "",
+      guests: table.guests ?? "",
+      endAt: !shouldClearTimers && Number(table.endAt) > 0 ? Number(table.endAt) : null,
+    })),
+  };
 }
 
 function readStoredState(key) {
@@ -77,14 +101,71 @@ function readStoredState(key) {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  saveCloudState();
+}
+
+function saveLocalState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function saveCloudState() {
+  const cloudState = serializeState(state);
+  if (cloudState === lastCloudState) return;
+
+  lastCloudState = cloudState;
+  set(seatMapRef, {
+    tables: state.tables,
+    updatedAt: Date.now(),
+  }).catch((error) => {
+    lastCloudState = "";
+    console.error("Firebase 저장 실패:", error);
+  });
+}
+
+function serializeState(value) {
+  return JSON.stringify({ tables: value.tables });
+}
+
+function startCloudSync() {
+  onValue(
+    seatMapRef,
+    (snapshot) => {
+      const value = snapshot.val();
+
+      if (!value?.tables?.length) {
+        state = { tables: createInitialTables() };
+        selectedTableId = state.tables[0]?.id ?? null;
+        focusedTableId = null;
+        saveLocalState();
+        render();
+        saveCloudState();
+        return;
+      }
+
+      const incomingState = normalizeState(value);
+      const incomingSignature = serializeState(incomingState);
+      if (incomingSignature === lastCloudState) return;
+
+      state = incomingState;
+      lastCloudState = incomingSignature;
+      saveLocalState();
+
+      if (!state.tables.some((table) => table.id === focusedTableId)) {
+        focusedTableId = null;
+      }
+      if (!state.tables.some((table) => table.id === selectedTableId)) {
+        selectedTableId = state.tables[0]?.id ?? null;
+      }
+
+      render();
+    },
+    (error) => {
+      console.error("Firebase 동기화 실패:", error);
+    },
+  );
 }
 
 function render() {
-  els.editToggleButton.textContent = isEditing ? "완료" : "수정";
-  els.editToggleButton.setAttribute("aria-pressed", String(isEditing));
-  els.editToolbar.hidden = !isEditing;
-  els.seatBoard.classList.toggle("editing", isEditing);
-
   renderBoard();
   updateSummary();
 }
@@ -101,38 +182,50 @@ function renderBoard() {
     const startButton = node.querySelector(".start-button");
     const extendButton = node.querySelector(".extend-button");
     const resetButton = node.querySelector(".reset-button");
+    const deleteButton = node.querySelector(".delete-button");
+    const doneButton = node.querySelector(".done-button");
 
     node.dataset.id = table.id;
     node.style.setProperty("--seat-x", `${table.x}%`);
     node.style.setProperty("--seat-y", `${table.y}%`);
-    node.classList.toggle("selected", isEditing && table.id === selectedTableId);
-    node.classList.toggle("focused", isEditing && table.id === focusedTableId);
+    node.classList.toggle("selected", table.id === selectedTableId);
+    node.classList.toggle("focused", table.id === focusedTableId);
+    node.classList.toggle("edge-left", table.x < 30);
+    node.classList.toggle("edge-right", table.x > 70);
 
     face.textContent = tableFaceLabel(table, index);
-    face.disabled = !isEditing;
     leaderInput.value = table.leader;
     guestInput.value = table.guests;
     timerText.textContent = formatRemaining(table.endAt);
     startButton.textContent = table.endAt ? "2시간 재시작" : "2시간 시작";
     extendButton.disabled = !table.endAt;
 
-    if (isEditing) {
-      face.addEventListener("pointerdown", (event) => startDrag(event, table.id));
-      face.addEventListener("click", () => focusTable(table.id));
-      leaderInput.addEventListener("input", (event) => updateTable(table.id, { leader: event.target.value }, false));
-      guestInput.addEventListener("input", (event) => updateTable(table.id, { guests: event.target.value }, false));
-      startButton.addEventListener("click", () => startTimer(table.id));
-      extendButton.addEventListener("click", () => extendTimer(table.id));
-      resetButton.addEventListener("click", () => resetTable(table.id));
-    }
+    face.addEventListener("pointerdown", (event) => startDrag(event, table.id));
+    face.addEventListener("pointerup", (event) => handleTableTap(event, table.id));
+    face.addEventListener("dblclick", (event) => openTableEditor(event, table.id));
+    leaderInput.addEventListener("input", (event) => updateTable(table.id, { leader: event.target.value }, false));
+    guestInput.addEventListener("input", (event) => updateTable(table.id, { guests: event.target.value }, false));
+    startButton.addEventListener("click", () => startTimer(table.id));
+    extendButton.addEventListener("click", () => extendTimer(table.id));
+    resetButton.addEventListener("click", () => resetTable(table.id));
+    deleteButton.addEventListener("click", () => deleteTable(table.id));
+    doneButton.addEventListener("click", closeTableEditor);
 
     els.seatBoard.append(node);
   });
 }
 
-function focusTable(id) {
+function openTableEditor(event, id) {
+  event.preventDefault();
+  event.stopPropagation();
   selectedTableId = id;
-  focusedTableId = focusedTableId === id ? null : id;
+  focusedTableId = id;
+  render();
+}
+
+function closeTableEditor() {
+  focusedTableId = null;
+  dragState = null;
   render();
 }
 
@@ -178,10 +271,7 @@ function extendTimer(id) {
   });
 }
 
-function addTable() {
-  const count = state.tables.length;
-  const x = 24 + ((count * 23) % 52);
-  const y = 24 + ((count * 17) % 52);
+function addTable(x, y) {
   const table = createTable(x, y);
 
   state.tables = [...state.tables, table];
@@ -191,25 +281,16 @@ function addTable() {
   render();
 }
 
-function deleteSelectedTable() {
-  if (!selectedTableId) return;
-
-  state.tables = state.tables.filter((table) => table.id !== selectedTableId);
+function deleteTable(id) {
+  state.tables = state.tables.filter((table) => table.id !== id);
   selectedTableId = state.tables[0]?.id ?? null;
-  focusedTableId = focusedTableId === selectedTableId ? focusedTableId : null;
+  focusedTableId = null;
   saveState();
   render();
 }
 
-function toggleEditMode() {
-  isEditing = !isEditing;
-  focusedTableId = isEditing ? selectedTableId : null;
-  dragState = null;
-  render();
-}
-
 function startDrag(event, id) {
-  if (!isEditing) return;
+  if (focusedTableId !== id) return;
 
   const boardRect = els.seatBoard.getBoundingClientRect();
   const table = state.tables.find((item) => item.id === id);
@@ -227,6 +308,43 @@ function startDrag(event, id) {
   };
 
   event.currentTarget.setPointerCapture(event.pointerId);
+}
+
+function handleTableTap(event, id) {
+  if (dragState?.hasMoved) return;
+
+  const now = Date.now();
+  const isDoubleTap = lastTableTap?.id === id && now - lastTableTap.time < 360;
+  lastTableTap = { id, time: now };
+
+  if (isDoubleTap) {
+    openTableEditor(event, id);
+  }
+}
+
+function handleBoardTap(event) {
+  if (event.target !== els.seatBoard || dragState?.hasMoved) return;
+
+  const now = Date.now();
+  const rect = els.seatBoard.getBoundingClientRect();
+  const x = clamp(((event.clientX - rect.left) / rect.width) * 100, 13, 87);
+  const y = clamp(((event.clientY - rect.top) / rect.height) * 100, 10, 90);
+  const isDoubleTap =
+    lastBoardTap &&
+    now - lastBoardTap.time < 360 &&
+    Math.hypot(event.clientX - lastBoardTap.clientX, event.clientY - lastBoardTap.clientY) < 18;
+
+  lastBoardTap = {
+    time: now,
+    clientX: event.clientX,
+    clientY: event.clientY,
+  };
+
+  if (isDoubleTap) {
+    addTable(x, y);
+  } else if (focusedTableId) {
+    closeTableEditor();
+  }
 }
 
 function moveTable(clientX, clientY) {
@@ -281,9 +399,7 @@ function updateTimers() {
   });
 }
 
-els.editToggleButton.addEventListener("click", toggleEditMode);
-els.addTableButton.addEventListener("click", addTable);
-els.deleteTableButton.addEventListener("click", deleteSelectedTable);
+els.seatBoard.addEventListener("pointerup", handleBoardTap);
 
 window.addEventListener("pointermove", (event) => {
   if (!dragState) return;
@@ -298,4 +414,5 @@ window.addEventListener("pointerup", stopDrag);
 window.addEventListener("pointercancel", stopDrag);
 
 setInterval(updateTimers, 1000);
+startCloudSync();
 render();
