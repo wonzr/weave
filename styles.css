@@ -1,0 +1,385 @@
+:root {
+  color-scheme: dark;
+  --bg: #000;
+  --panel: #101010;
+  --panel-2: #171717;
+  --line: #2a2a2a;
+  --text: #f7f7f7;
+  --muted: #a3a3a3;
+  --soft: #d8d8d8;
+  --accent: #f5f5f5;
+  --danger: #ff6868;
+  --ok: #6ee7b7;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-shell {
+  width: min(100vw, 520px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--bg);
+}
+
+.login-screen,
+.main-screen {
+  min-height: 100dvh;
+  padding:
+    max(18px, env(safe-area-inset-top))
+    18px
+    max(22px, env(safe-area-inset-bottom));
+}
+
+.login-screen {
+  display: grid;
+  place-items: center;
+}
+
+.login-panel {
+  width: 100%;
+  max-width: 380px;
+  padding: 26px 18px 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 12vw, 3.15rem);
+  line-height: 0.96;
+}
+
+h2 {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.login-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+label span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  color: var(--text);
+  background: #050505;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--accent);
+}
+
+.login-error {
+  min-height: 19px;
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.86rem;
+}
+
+.login-form button,
+.primary-tool,
+.danger-tool,
+.start-button,
+.extend-button,
+.reset-button {
+  min-height: 44px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.login-form button,
+.primary-tool,
+.edit-toggle,
+.start-button {
+  color: #050505;
+  background: var(--accent);
+}
+
+.danger-tool {
+  color: #050505;
+  background: var(--danger);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 2px 0 16px;
+}
+
+.icon-button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 1.15rem;
+}
+
+.edit-bar {
+  margin-bottom: 12px;
+}
+
+.edit-toggle {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.edit-toggle[aria-pressed="true"] {
+  background: var(--ok);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.toolbar,
+.summary-bar {
+  display: grid;
+  grid-template-columns: 1fr 96px;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.summary-bar {
+  grid-template-columns: 1fr 1fr;
+}
+
+.summary-bar span {
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--soft);
+  font-weight: 800;
+}
+
+.board {
+  position: relative;
+  width: 100%;
+  height: min(66dvh, 660px);
+  min-height: 470px;
+  overflow: hidden;
+  background:
+    linear-gradient(#141414 1px, transparent 1px),
+    linear-gradient(90deg, #141414 1px, transparent 1px),
+    #050505;
+  background-size: 32px 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  touch-action: none;
+}
+
+.map-board {
+  overflow: visible;
+  margin-bottom: 184px;
+  touch-action: auto;
+}
+
+.seat-board {
+  overflow: visible;
+  margin-bottom: 184px;
+  touch-action: auto;
+}
+
+.seat-board.editing {
+  touch-action: none;
+}
+
+.table-seat {
+  --seat-x: 12%;
+  --seat-y: 12%;
+  position: absolute;
+  left: var(--seat-x);
+  top: var(--seat-y);
+  width: 116px;
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+
+.table-face {
+  width: 92px;
+  height: 92px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  color: #050505;
+  background: #fff;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.46);
+  font-size: 0.92rem;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: pre-line;
+}
+
+.seat-board.editing .table-seat.selected .table-face,
+.seat-board.editing .table-seat.focused .table-face {
+  border-color: var(--ok);
+  box-shadow: 0 0 0 4px rgba(110, 231, 183, 0.26), 0 12px 24px rgba(0, 0, 0, 0.46);
+}
+
+.table-face:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.table-editor {
+  display: none;
+  width: min(290px, calc(100vw - 48px));
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.seat-board.editing .table-seat.focused {
+  z-index: 5;
+}
+
+.seat-board.editing .table-seat.focused .table-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.table-editor input {
+  min-height: 40px;
+}
+
+.timer-row {
+  display: grid;
+  grid-template-columns: 1fr 112px;
+  gap: 8px;
+  align-items: center;
+}
+
+.timer-text {
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  background: #050505;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.18rem;
+}
+
+.timer-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.extend-button {
+  color: #050505;
+  background: var(--ok);
+  font-size: 0.82rem;
+}
+
+.extend-button:disabled {
+  color: var(--muted);
+  background: var(--panel-2);
+  cursor: default;
+}
+
+.reset-button {
+  width: 100%;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+}
+
+@media (max-width: 390px) {
+  .login-screen,
+  .main-screen {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .board {
+    min-height: 440px;
+  }
+
+  .table-seat {
+    width: 104px;
+  }
+
+  .table-face {
+    width: 82px;
+    height: 82px;
+    font-size: 0.84rem;
+  }
+
+  .table-editor {
+    width: min(278px, calc(100vw - 34px));
+  }
+}
