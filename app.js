@@ -217,7 +217,7 @@ function renderBoard() {
     leaderInput.value = table.leader;
     guestInput.value = table.guests;
     timerText.textContent = formatRemaining(table.endAt);
-    startButton.textContent = table.endAt ? "2시간 재시작" : "2시간 시작";
+    startButton.textContent = "2시간 시작";
     extendButton.disabled = !table.endAt;
 
     face.addEventListener("pointerdown", (event) => startDrag(event, table.id));
@@ -414,7 +414,7 @@ function updateTimers() {
 
     if (face) face.textContent = tableFaceLabel(table, index);
     if (timer) timer.textContent = formatRemaining(table.endAt);
-    if (startButton) startButton.textContent = table.endAt ? "2시간 재시작" : "2시간 시작";
+    if (startButton) startButton.textContent = "2시간 시작";
     if (extendButton) extendButton.disabled = !table.endAt;
   });
 }
