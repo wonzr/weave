@@ -1,5 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
+  getAuth,
+  signInAnonymously,
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+import {
   getDatabase,
   onValue,
   ref,
@@ -17,6 +21,7 @@ const firebaseConfig = {
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
 const database = getDatabase(firebaseApp);
 const seatMapRef = ref(database, "seatMap");
 
@@ -40,6 +45,7 @@ let dragState = null;
 let lastBoardTap = null;
 let lastTableTap = null;
 let lastCloudState = "";
+let cloudReady = false;
 
 function createInitialTables() {
   return [
@@ -78,8 +84,10 @@ function loadState() {
 }
 
 function normalizeState(saved, shouldClearTimers = false) {
+  const tables = Array.isArray(saved?.tables) ? saved.tables : Object.values(saved?.tables ?? {});
+
   return {
-    tables: (saved?.tables ?? []).map((table) => ({
+    tables: tables.map((table) => ({
       id: table.id ?? createTable().id,
       x: Number.isFinite(Number(table.x)) ? Number(table.x) : 50,
       y: Number.isFinite(Number(table.y)) ? Number(table.y) : 50,
@@ -109,6 +117,8 @@ function saveLocalState() {
 }
 
 function saveCloudState() {
+  if (!cloudReady) return;
+
   const cloudState = serializeState(state);
   if (cloudState === lastCloudState) return;
 
@@ -163,6 +173,16 @@ function startCloudSync() {
       console.error("Firebase 동기화 실패:", error);
     },
   );
+}
+
+async function startAuthenticatedSync() {
+  try {
+    await signInAnonymously(auth);
+    cloudReady = true;
+    startCloudSync();
+  } catch (error) {
+    console.error("Firebase 익명 인증 실패:", error);
+  }
 }
 
 function render() {
@@ -414,5 +434,5 @@ window.addEventListener("pointerup", stopDrag);
 window.addEventListener("pointercancel", stopDrag);
 
 setInterval(updateTimers, 1000);
-startCloudSync();
 render();
+startAuthenticatedSync();
